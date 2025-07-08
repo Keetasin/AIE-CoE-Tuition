@@ -1,0 +1,5 @@
+pandas
+playwright
+openpyxl
+dash
+dash_bootstrap_components
