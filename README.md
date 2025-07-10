@@ -73,12 +73,12 @@ Ensure that you have Python installed on your system before proceeding.
 
 ### Running and Viewing the Application
 
-1. Ensure you're inside the project directory and the virtual environment is activated.
-2. Run the application:
+Ensure you're inside the project directory and the virtual environment is activated.
+1. Run the application:
    ```bash
    tuition_dashboard.py
    ```
-3. Open your browser and go to:
+2. Open your browser and go to:
    ```
    http://127.0.0.1:8050/
    ```
