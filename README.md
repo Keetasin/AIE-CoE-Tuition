@@ -3,7 +3,9 @@
 ## Thai University Tuition Fee Dashboard (Computer & AI Engineering)
 
 ### Project Overview
+
 This project presents a **Dash web application** designed to visualize tuition fee data of Computer Engineering and Artificial Intelligence Engineering programs offered by Thai universities. The data is collected from [MyTCAS.com](https://course.mytcas.com), then cleaned, processed, and displayed using interactive dashboards. The system aims to assist high school students and parents in comparing tuition costs and exploring academic programs more easily.
+
 ---
 
 ### Dashboard Pages
@@ -25,6 +27,7 @@ This project presents a **Dash web application** designed to visualize tuition f
 
 
 ### Setup & Installation
+
 Ensure that you have Python installed on your system before proceeding.
 
 1. Clone the repository:
