@@ -20,7 +20,7 @@ The project includes an automated pipeline to:
 6. **Assign regions** (North, Central, South, etc.) based on university names.
 7. **Geocode** university names to retrieve latitude and longitude for mapping.
 
-Final data is exported to `data/university_fee_with_latlon1.xlsx` for visualization.
+Final data is exported to `data/university_fee_with_latlon.xlsx` for visualization.
 
 ---
 
