@@ -1,14 +1,30 @@
 # 241-353 AI ECOSYSTEM MODULE
 
-## Thai University Tuition Fee Dashboard (Computer & AI Engineering)
+## 🎓 Thai University Tuition Fee Dashboard (Computer & AI Engineering)
 
-### Project Overview
+### 📖 Project Overview
 
 This project presents a **Dash web application** designed to visualize tuition fee data of Computer Engineering and Artificial Intelligence Engineering programs offered by Thai universities. The data is collected from [MyTCAS.com](https://course.mytcas.com), then cleaned, processed, and displayed using interactive dashboards. The system aims to assist high school students and parents in comparing tuition costs and exploring academic programs more easily.
 
 ---
 
-### Dashboard Pages
+### 🛠️ Data Extraction & Processing
+
+The project includes an automated pipeline to:
+
+1. **Scrape course data** (university, faculty, program, type, and tuition) using [Playwright](https://playwright.dev/) from [MyTCAS.com](https://course.mytcas.com).
+2. **Clean and deduplicate** the dataset.
+3. **Filter** only programs related to Computer and AI Engineering.
+4. **Extract and normalize tuition fee** (convert to per-semester if listed as total).
+5. **Categorize** course types and split faculty > major.
+6. **Assign regions** (North, Central, South, etc.) based on university names.
+7. **Geocode** university names to retrieve latitude and longitude for mapping.
+
+Final data is exported to `data/university_fee_with_latlon1.xlsx` for visualization.
+
+---
+
+### 📊 Dashboard Pages
 
 1. **Overview**
    - Summary statistics of tuition fees
