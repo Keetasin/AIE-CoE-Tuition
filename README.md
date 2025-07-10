@@ -54,7 +54,20 @@ Ensure that you have Python installed on your system before proceeding.
    ```bash
    cd <project-folder>
    ```
-3. Install the required dependencies:
+3. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   ```
+4. Activate the virtual environment:
+   - On Windows:
+      ```bash
+      venv\Scripts\activate
+      ```
+   - On macOS/Linux:
+      ```bash
+      source venv/bin/activate
+      ```
+5. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
