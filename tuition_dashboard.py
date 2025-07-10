@@ -70,9 +70,10 @@ overview_layout = html.Div([
     ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '30px'}),
 
     html.Div([
-        dcc.Graph(id='histogram-overview'),
-        dcc.Graph(id='boxplot-overview')
+        dcc.Loading(dcc.Graph(id='histogram-overview')),
+        dcc.Loading(dcc.Graph(id='boxplot-overview'))
     ], style={'display': 'flex', 'gap': '40px'}),
+
 
     html.Div([
         html.Div([
@@ -265,19 +266,8 @@ search_layout = html.Div([
 # =======================
 map_layout = html.Div([
     html.H2("🗺️ แผนที่มหาวิทยาลัยและค่าเทอม", style={'textAlign': 'center'}),
-    html.Div([
-        html.Label("เลือกภาค:"),
-        dcc.Dropdown(
-            id='map-region-filter',
-            options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                    [{'label': r, 'value': r} for r in sorted(df['ภาค'].dropna().unique())],
-            value='all',
-            clearable=False,
-            style={'width': '300px', 'marginBottom': '20px'}
-        ),
-    ], style={'textAlign': 'center'}),
-    
-    dcc.Graph(id='map-graph', style={'height': '600px'}),
+    html.Div([], style={'height': '10px'}),  # placeholder spacing only    
+    dcc.Loading(dcc.Graph(id='map-graph', style={'height': '600px'})),
 ])
 
 
@@ -303,10 +293,10 @@ app.layout = html.Div(style={
         dcc.Tab(label='📊 ภาพรวม', value='overview',
                 style={'backgroundColor': theme['background'], 'color': theme['text']},
                 selected_style={'backgroundColor': theme['card'], 'color': theme['primary']}),
-        dcc.Tab(label='🔎 ค้นหาหลักสูตร', value='search',
+        dcc.Tab(label='🗺️ แผนที่มหาวิทยาลัย', value='map',
                 style={'backgroundColor': theme['background'], 'color': theme['text']},
                 selected_style={'backgroundColor': theme['card'], 'color': theme['primary']}),
-                dcc.Tab(label='🗺️ แผนที่มหาวิทยาลัย', value='map',
+        dcc.Tab(label='🔎 ค้นหาหลักสูตร', value='search',
                 style={'backgroundColor': theme['background'], 'color': theme['text']},
                 selected_style={'backgroundColor': theme['card'], 'color': theme['primary']}),
     ]),
@@ -335,7 +325,7 @@ def switch_tab(tab):
     Output('count-programs', 'children'),
     Input('overview-type-filter', 'value'),
     Input('overview-keyword-filter', 'value'),
-    Input('overview-region-filter', 'value')  # เพิ่ม input ตัวนี้
+    Input('overview-region-filter', 'value')
 )
 def update_overview(type_selected, keyword_selected, region_selected):
     dff = df.copy()
@@ -346,26 +336,126 @@ def update_overview(type_selected, keyword_selected, region_selected):
     if keyword_selected != 'all':
         dff = dff[dff['คำค้น'].str.contains(keyword_selected, case=False, na=False)]
 
-    if region_selected != 'all':  # กรองภาค ถ้าเลือกไม่ใช่ "all"
+    if region_selected != 'all':
         dff = dff[dff['ภาค'] == region_selected]
 
-    hist_fig = px.histogram(dff, x='ค่าเทอม', nbins=20, color='ประเภทหลักสูตร',
-                            title='การกระจายของค่าเทอมตามประเภทหลักสูตร')
+    if dff.empty:
+        # กรณีไม่มีข้อมูล
+        empty_fig = px.bar(title='ไม่มีข้อมูล')
+        empty_box = px.box(title='ไม่มีข้อมูล')
+        return (empty_fig, empty_box,
+                "ไม่มีข้อมูล", "ไม่มีข้อมูล", "ไม่มีข้อมูล", "ไม่มีข้อมูล", "0 หลักสูตร")
 
-    box_fig = px.box(dff, x='ประเภทหลักสูตร', y='ค่าเทอม',
-                    title='Boxplot: ค่าเทอมตามประเภทหลักสูตร')
+    # กำหนดขนาด bin ค่าเทอม เช่น 3000 บาท
+    bin_size = 3000
+    dff['fee_bin_start'] = (dff['ค่าเทอม'] // bin_size) * bin_size
+    dff['fee_bin_end'] = dff['fee_bin_start'] + bin_size
+
+    # สรุปข้อมูลในแต่ละ bin
+    grouped = dff.groupby(['fee_bin_start', 'fee_bin_end']).agg(
+        count=('หลักสูตร', 'count'),
+        programs_list=('หลักสูตร', lambda x: list(x.unique())),
+        universities_list=('มหาวิทยาลัย', lambda x: list(x.unique()))
+    ).reset_index()
+
+    def wrap_text(text, width=60):
+        words = text.split(' ')
+        lines = []
+        current_line = ''
+
+        for word in words:
+            # ถ้าเติมคำนี้แล้วเกิน width
+            if len(current_line) + len(word) + (1 if current_line else 0) > width:
+                # เก็บบรรทัดปัจจุบันก่อน แล้วเริ่มบรรทัดใหม่
+                lines.append(current_line)
+                current_line = word
+            else:
+                # เติมคำลงบรรทัด
+                if current_line:
+                    current_line += ' ' + word
+                else:
+                    current_line = word
+
+        # บรรทัดสุดท้าย
+        if current_line:
+            lines.append(current_line)
+
+        return '<br>'.join(lines)
+
+
+    def make_hover_text(row):
+        fee_range = f"ค่าเทอม {int(row['fee_bin_start']):,} - {int(row['fee_bin_end']):,} บาท<br>"
+        count = f"จำนวนหลักสูตร: {row['count']} หลักสูตร<br>"
+        uni_programs = []
+        
+
+        # จำกัดแสดงมหาวิทยาลัยไม่เกิน 3 แห่ง
+        for uni in row['universities_list'][:3]:
+            progs = dff[
+                (dff['fee_bin_start'] == row['fee_bin_start']) &
+                (dff['fee_bin_end'] == row['fee_bin_end']) &
+                (dff['มหาวิทยาลัย'] == uni)
+            ]['หลักสูตร'].unique()
+
+            # จำกัดหลักสูตรไม่เกิน 3 รายการ
+            # progs_display = progs[:3]
+            # progs_text = "<br>- " + "<br>- ".join(progs_display)
+            wrapped_progs = [wrap_text(p) for p in progs[:3]]
+            progs_text = "<br>- " + "<br>- ".join(wrapped_progs)
+            if len(progs) > 3:
+                progs_text += "<br>..."
+
+            uni_programs.append(f"{uni}<br>หลักสูตร:{progs_text}<br>")
+
+        # ถ้ามีมากกว่า 3 มหาวิทยาลัย
+        if len(row['universities_list']) > 3:
+            uni_programs.append("...")
+
+        uni_programs_text = "<br><br>".join(uni_programs)
+        return f"{fee_range}{count}<br>{uni_programs_text}"
+
+
+    grouped['hover_text'] = grouped.apply(make_hover_text, axis=1)
+
+    hist_fig = px.bar(
+        grouped,
+        x='fee_bin_start',
+        y='count',
+        color='fee_bin_start',
+        color_continuous_scale=px.colors.sequential.Viridis,
+        labels={'fee_bin_start': 'ช่วงค่าเทอม (บาท)', 'count': 'จำนวนหลักสูตร'},
+        title='การกระจายของค่าเทอมตามช่วง',
+        text='count'
+    )
+
+    hist_fig.update_traces(
+        hovertemplate="%{customdata}<extra></extra>",
+        customdata=grouped['hover_text']
+    )
+
+    hist_fig.update_layout(
+        coloraxis_showscale=False,
+        coloraxis_colorbar=dict(title="ช่วงค่าเทอม")
+    )
+
+
+    # สร้าง boxplot แบบเดิม (ค่าเทอมตามประเภทหลักสูตร)
+    box_fig = px.box(
+        dff,
+        x='ประเภทหลักสูตร',
+        y='ค่าเทอม',
+        title='Boxplot: ค่าเทอมตามประเภทหลักสูตร'
+    )
 
     count_programs = f"{len(dff):,} หลักสูตร"
-
-    if not dff.empty:
-        mean_fee = f"{dff['ค่าเทอม'].mean():,.0f} บาท"
-        max_fee = f"{dff['ค่าเทอม'].max():,} บาท"
-        min_fee = f"{dff['ค่าเทอม'].min():,} บาท"
-        median_fee = f"{dff['ค่าเทอม'].median():,} บาท"
-    else:
-        mean_fee = max_fee = min_fee = median_fee = "ไม่มีข้อมูล"
+    mean_fee = f"{dff['ค่าเทอม'].mean():,.0f} บาท"
+    max_fee = f"{dff['ค่าเทอม'].max():,} บาท"
+    min_fee = f"{dff['ค่าเทอม'].min():,} บาท"
+    median_fee = f"{dff['ค่าเทอม'].median():,} บาท"
 
     return hist_fig, box_fig, mean_fee, max_fee, min_fee, median_fee, count_programs
+
+
 
 @app.callback(
     Output('search-table', 'data'),
@@ -403,14 +493,10 @@ def update_search_table(keyword, university, faculty, department, type_course, r
 
 @app.callback(
     Output('map-graph', 'figure'),
-    Input('map-region-filter', 'value')
+    Input('tabs', 'value')  # dummy input ให้ callback รันเมื่อเปิด tab map
 )
-def update_map(region):
+def update_map(tab):
     dff = df.copy()
-
-    # กรองภาค
-    if region != 'all':
-        dff = dff[dff['ภาค'] == region]
 
     # ลบ NaN lat/lon
     dff = dff.dropna(subset=['Latitude', 'Longitude'])
@@ -448,8 +534,8 @@ def update_map(region):
         size="จำนวนหลักสูตร",
         size_max=20,
         zoom=5,
-        title="แผนที่มหาวิทยาลัยและหลักสูตรทั้งหมด",
-        color_continuous_scale=px.colors.sequential.Plasma
+        # title="แผนที่มหาวิทยาลัยและหลักสูตรทั้งหมด",
+        color_continuous_scale=px.colors.sequential.Plasma,
     )
 
     fig.update_traces(
