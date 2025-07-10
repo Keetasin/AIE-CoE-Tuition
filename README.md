@@ -10,8 +10,6 @@ This project presents a **Dash web application** designed to visualize tuition f
 
 ### Data Extraction & Processing
 
-The project includes an automated pipeline to:
-
 1. **Scrape course data** (university, faculty, program, type, and tuition) using [Playwright](https://playwright.dev/) from [MyTCAS.com](https://course.mytcas.com).
 2. **Clean and deduplicate** the dataset.
 3. **Filter** only programs related to Computer and AI Engineering.
@@ -75,7 +73,7 @@ Ensure that you have Python installed on your system before proceeding.
 
 ### Running and Viewing the Application
 
-1. Ensure you are inside the project directory.
+1. Ensure you're inside the project directory and the virtual environment is activated.
 2. Run the application:
    ```bash
    tuition_dashboard.py
