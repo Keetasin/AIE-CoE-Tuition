@@ -10,7 +10,7 @@ This project presents a **Dash web application** designed to visualize tuition f
 
 ### Data Extraction & Processing
 
-1. **Scrape course data** (university, faculty, program, type, and tuition) using [Playwright](https://playwright.dev/) from [MyTCAS.com](https://course.mytcas.com).
+1. **Scrape course data** (university, faculty, program, type, link and tuition) using [Playwright](https://playwright.dev/) from [MyTCAS.com](https://course.mytcas.com).
 2. **Clean and deduplicate** the dataset.
 3. **Filter** only programs related to Computer and AI Engineering.
 4. **Extract and normalize tuition fee** (convert to per-semester if listed as total).
