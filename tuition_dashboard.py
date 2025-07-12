@@ -1,6 +1,10 @@
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output, dash_table
+from dash import Dash, dcc, html, Input, Output, dash_table, State
+from dash.exceptions import PreventUpdate
+from dash import callback_context
+from dash import callback_context
 import plotly.express as px
+import io
 
 # =======================
 # 📥 Load Data
@@ -21,7 +25,7 @@ theme = {
     'background': '#f0f8ff',
     'card': '#ffffff',
     'primary': '#007acc',
-    'text': '#003f5c',
+    'text': '#003C71',
     'accent': '#00bcd4'
 }
 
@@ -29,7 +33,8 @@ theme = {
 # 📊 Overview Layout
 # =======================
 overview_layout = html.Div([
-    html.H2("📊 ภาพรวมค่าเทอมของหลักสูตร", style={'textAlign': 'center'}),
+    html.H2("ภาพรวมค่าเทอมของหลักสูตร", style={'textAlign': 'center'}),
+    html.Div([], style={'height': '10px'}),  # placeholder spacing only   
     html.Div([
         html.Div([
             html.Label("เลือกประเภทหลักสูตร:"),
@@ -140,133 +145,249 @@ overview_layout = html.Div([
     })
 ])
 
+
 # =======================
-# 🔍 Search Layout
+# 🔍 Search Layout 
 # =======================
 search_layout = html.Div([
-    html.H2("🔎 ค้นหาหลักสูตรที่เหมาะสม", style={'textAlign': 'center'}),
+    html.H2("ค้นหาหลักสูตรที่เหมาะสม", style={'textAlign': 'center'}),
+    html.Div([], style={'height': '10px'}),  # placeholder spacing only   
 
+    # ครอบ 3 แถว dropdown ด้วย div นี้ กำหนดกึ่งกลางและจัดเรียงแนวตั้ง
     html.Div([
         html.Div([
-            html.Label("คำค้น (หลักสูตร):"),
-            dcc.Dropdown(
-                id='search-keyword',
-                options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                        [{'label': k, 'value': k} for k in sorted(df['คำค้น'].dropna().unique())],
-                value='all',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
+            # แถว 1
+            html.Div([
+                html.Label("คำค้น (หลักสูตร):"),
+                dcc.Dropdown(
+                    id='search-keyword',
+                    options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
+                            [{'label': k, 'value': k} for k in sorted(df['คำค้น'].dropna().unique())],
+                    value='all',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
 
+            html.Div([
+                html.Label("มหาวิทยาลัย:"),
+                dcc.Dropdown(
+                    id='search-university',
+                    options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
+                            [{'label': u, 'value': u} for u in sorted(df['มหาวิทยาลัย'].dropna().unique())],
+                    value='all',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
+
+            html.Div([
+                html.Label("คณะ:"),
+                dcc.Dropdown(
+                    id='search-faculty',
+                    options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
+                            [{'label': f, 'value': f} for f in sorted(df['คณะ'].dropna().unique())],
+                    value='all',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
+        ], style={'display': 'flex', 'gap': '20px', 'justifyContent': 'center', 'marginBottom': '15px'}),
+
+        # แถว 2
         html.Div([
-            html.Label("มหาวิทยาลัย:"),
-            dcc.Dropdown(
-                id='search-university',
-                options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                        [{'label': u, 'value': u} for u in sorted(df['มหาวิทยาลัย'].dropna().unique())],
-                value='all',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
+            html.Div([
+                html.Label("สาขา:"),
+                dcc.Dropdown(
+                    id='search-department',
+                    options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
+                            [{'label': d, 'value': d} for d in sorted(df['สาขา'].dropna().unique())],
+                    value='all',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
 
+            html.Div([
+                html.Label("ประเภทหลักสูตร:"),
+                dcc.Dropdown(
+                    id='search-type',
+                    options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
+                            [{'label': t, 'value': t} for t in sorted(df['ประเภทหลักสูตร'].dropna().unique())],
+                    value='all',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
+
+            html.Div([
+                html.Label("ภาค:"),
+                dcc.Dropdown(
+                    id='search-region',
+                    options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
+                            [{'label': r, 'value': r} for r in sorted(df['ภาค'].dropna().unique())],
+                    value='all',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
+        ], style={'display': 'flex', 'gap': '20px', 'justifyContent': 'center', 'marginBottom': '20px'}),
+
+        # แถว 3
         html.Div([
-            html.Label("คณะ:"),
-            dcc.Dropdown(
-                id='search-faculty',
-                options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                        [{'label': f, 'value': f} for f in sorted(df['คณะ'].dropna().unique())],
-                value='all',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
-    ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '15px'}),
+            html.Div([
+                html.Label("ค่าเทอมขั้นต่ำ:"),
+                dcc.Input(id='min-fee-input', type='number', value=df['ค่าเทอม'].min(), style={'width': '100%'})
+            ], style={'width': '30%'}),
+            html.Div([
+                html.Label("ค่าเทอมสูงสุด:"),
+                dcc.Input(id='max-fee-input', type='number', value=df['ค่าเทอม'].max(), style={'width': '100%'})
+            ], style={'width': '30%'}),
+            html.Div([
+                html.Label("เรียงตามค่าเทอม:"),
+                dcc.Dropdown(
+                    id='sort-order',
+                    options=[
+                        {'label': 'สูง → ต่ำ', 'value': 'desc'},
+                        {'label': 'ต่ำ → สูง', 'value': 'asc'}
+                    ],
+                    value='asc',
+                    clearable=False,
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%'}),
+        ], style={'display': 'flex', 'gap': '20px', 'justifyContent': 'center', 'marginBottom': '30px'}),
+    ], style={'maxWidth': '1280px', 'margin': '0 auto', 'display': 'flex', 'flexDirection': 'column', 'gap': '15px'}),
 
+
+    # ตารางแสดงผลหลักสูตรตามเงื่อนไข
     html.Div([
-        html.Div([
-            html.Label("สาขา:"),
-            dcc.Dropdown(
-                id='search-department',
-                options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                        [{'label': d, 'value': d} for d in sorted(df['สาขา'].dropna().unique())],
-                value='all',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
+        dash_table.DataTable(
+            id='search-table',
+            columns=[
+                {"name": "มหาวิทยาลัย", "id": "มหาวิทยาลัย"},
+                {"name": "หลักสูตร", "id": "หลักสูตร"},
+                {"name": "ประเภทหลักสูตร", "id": "ประเภทหลักสูตร"},
+                {"name": "ค่าเทอม", "id": "ค่าเทอม"}
+            ],
+            page_size=10,
+            style_table={
+                'overflowX': 'auto',
+                'width': '100%',
+            },
+            style_cell={
+                'textAlign': 'left',
+                'padding': '12px',
+                'fontFamily': 'Arial',
+                'fontSize': '15px',
+                'whiteSpace': 'normal',
+            },
+            style_header={
+                'backgroundColor': '#003C71',
+                'color': 'white',
+                'fontWeight': 'bold',
+                'textAlign': 'left',
+                'fontSize': '16px',
+                'padding': '14px'
+            },
+            style_data={
+                'backgroundColor': 'white',
+                'color': '#333',
+            },
+            style_data_conditional=[
+                {
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': "#edf5f8"
+                }
+            ],
+            style_as_list_view=True,
+            row_selectable="multi",
+            selected_rows=[],
+        )
+    ], style={
+        'backgroundColor': theme['card'],
+        'padding': '20px',
+        'borderRadius': '10px',
+        'boxShadow': '0 4px 12px rgba(0,0,0,0.05)',
+        'width': '100%',
+        'maxWidth': '1280px',
+        'margin': '0 auto',
+        'marginBottom': '30px'
+    }),
 
-        html.Div([
-            html.Label("ประเภทหลักสูตร:"),
-            dcc.Dropdown(
-                id='search-type',
-                options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                        [{'label': t, 'value': t} for t in sorted(df['ประเภทหลักสูตร'].dropna().unique())],
-                value='all',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
-
-        html.Div([
-            html.Label("ภาค:"),
-            dcc.Dropdown(
-                id='search-region',
-                options=[{'label': 'ทั้งหมด', 'value': 'all'}] +
-                        [{'label': r, 'value': r} for r in sorted(df['ภาค'].dropna().unique())],
-                value='all',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
-    ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '20px'}),
-
+    # ตารางสำหรับแสดงหลักสูตรที่ผู้ใช้เลือกและลากจัดอันดับได้
     html.Div([
-        html.Div([
-            html.Label("ค่าเทอมขั้นต่ำ:"),
-            dcc.Input(id='min-fee-input', type='number', value=df['ค่าเทอม'].min(), style={'width': '100%'})
-        ], style={'width': '30%'}),
-        html.Div([
-            html.Label("ค่าเทอมสูงสุด:"),
-            dcc.Input(id='max-fee-input', type='number', value=df['ค่าเทอม'].max(), style={'width': '100%'})
-        ], style={'width': '30%'}),
-        html.Div([
-            html.Label("เรียงตามค่าเทอม:"),
-            dcc.Dropdown(
-                id='sort-order',
-                options=[
-                    {'label': 'สูง → ต่ำ', 'value': 'desc'},
-                    {'label': 'ต่ำ → สูง', 'value': 'asc'}
-                ],
-                value='asc',
-                clearable=False,
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%'}),
-    ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '30px'}),
+        html.H4("10 อันดับหลักสูตรที่สนใจ"),
+        dash_table.DataTable(
+            id='selected-rank-table',
+            columns=[
+                {"name": "อันดับ", "id": "อันดับ"},                
+                {"name": "มหาวิทยาลัย", "id": "มหาวิทยาลัย"},
+                {"name": "หลักสูตร", "id": "หลักสูตร"},
+                {"name": "ประเภทหลักสูตร", "id": "ประเภทหลักสูตร"},
+                {"name": "ค่าเทอม", "id": "ค่าเทอม"}
+            ],
+            data=[],
+            row_deletable=True,
+            style_table={'overflowX': 'auto', 'width': '100%'},
+            style_cell={
+                'textAlign': 'left',
+                'padding': '12px',
+                'fontFamily': 'Arial',
+                'fontSize': '15px',
+                'whiteSpace': 'normal',
+            },
+            style_header={
+                'backgroundColor': '#005f9e',
+                'color': 'white',
+                'fontWeight': 'bold',
+                'textAlign': 'left',
+                'fontSize': '16px',
+                'padding': '14px'
+            },
+            style_data={
+                'backgroundColor': 'white',
+                'color': '#333',
+            },
+            style_data_conditional=[
+                {
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': "#edf5f8"
+                }
+            ],
+            style_as_list_view=True,
+            selected_rows=[],
+            editable=False,
+            page_action='native',
+            page_current=0,
+            page_size=10,
+            sort_action='none',
+            filter_action='none',
+            ),
+    html.Br(),
+    html.Button("Export 10 อันดับหลักสูตรเป็น Excel", id="export-button"),
+    dcc.Download(id="download-dataframe-xlsx"),
+    ], style={
+        'backgroundColor': theme['card'],
+        'padding': '20px',
+        'borderRadius': '10px',
+        'boxShadow': '0 4px 12px rgba(0,0,0,0.05)',
+        'width': '100%',
+        'maxWidth': '1280px',
+        'margin': '0 auto',
+    }),
 
-    dash_table.DataTable(
-        id='search-table',
-        columns=[
-            {"name": "มหาวิทยาลัย", "id": "มหาวิทยาลัย"},
-            {"name": "หลักสูตร", "id": "หลักสูตร"},
-            {"name": "ประเภทหลักสูตร", "id": "ประเภทหลักสูตร"},
-            {"name": "ค่าเทอม", "id": "ค่าเทอม"}
-        ],
-        page_size=10,
-        style_table={'overflowX': 'auto'},
-        style_cell={'textAlign': 'left'}
-    )
 ])
+
+
 
 
 # =======================
 # 🗺️ Map Layout
 # =======================
 map_layout = html.Div([
-    html.H2("🗺️ แผนที่มหาวิทยาลัยและค่าเทอม", style={'textAlign': 'center'}),
-    html.Div([], style={'height': '10px'}),  # placeholder spacing only    
+    html.H2("แผนที่มหาวิทยาลัยและค่าเทอม", style={'textAlign': 'center'}),
+    html.Div([], style={'height': '15px'}),  # placeholder spacing only    
     dcc.Loading(dcc.Graph(id='map-graph', style={'height': '600px'})),
 ])
 
@@ -278,10 +399,10 @@ app.layout = html.Div(style={
     'backgroundColor': theme['background'], 
     'fontFamily': 'Arial, sans-serif'
 }, children=[
-    html.H1("Dashboard วิเคราะห์ค่าเทอม", 
+    html.H1("AIE & CoE Tuition Dashboard", 
             style={
                 'textAlign': 'center', 
-                'color': theme['primary'],
+                'color': theme['text'],
                 'padding': '20px'
             }),
 
@@ -398,8 +519,6 @@ def update_overview(type_selected, keyword_selected, region_selected):
             ]['หลักสูตร'].unique()
 
             # จำกัดหลักสูตรไม่เกิน 3 รายการ
-            # progs_display = progs[:3]
-            # progs_text = "<br>- " + "<br>- ".join(progs_display)
             wrapped_progs = [wrap_text(p) for p in progs[:3]]
             progs_text = "<br>- " + "<br>- ".join(wrapped_progs)
             if len(progs) > 3:
@@ -435,7 +554,8 @@ def update_overview(type_selected, keyword_selected, region_selected):
 
     hist_fig.update_layout(
         coloraxis_showscale=False,
-        coloraxis_colorbar=dict(title="ช่วงค่าเทอม")
+        coloraxis_colorbar=dict(title="ช่วงค่าเทอม"),
+        title_x=0.5
     )
 
 
@@ -444,8 +564,10 @@ def update_overview(type_selected, keyword_selected, region_selected):
         dff,
         x='ประเภทหลักสูตร',
         y='ค่าเทอม',
-        title='Boxplot: ค่าเทอมตามประเภทหลักสูตร'
+        color='ประเภทหลักสูตร',
+        title='ค่าเทอมตามประเภทหลักสูตร'
     )
+    box_fig.update_layout(showlegend=False,title_x=0.5) 
 
     count_programs = f"{len(dff):,} หลักสูตร"
     mean_fee = f"{dff['ค่าเทอม'].mean():,.0f} บาท"
@@ -454,8 +576,6 @@ def update_overview(type_selected, keyword_selected, region_selected):
     median_fee = f"{dff['ค่าเทอม'].median():,} บาท"
 
     return hist_fig, box_fig, mean_fee, max_fee, min_fee, median_fee, count_programs
-
-
 
 @app.callback(
     Output('search-table', 'data'),
@@ -485,7 +605,11 @@ def update_search_table(keyword, university, faculty, department, type_course, r
     if region != 'all':
         dff = dff[dff['ภาค'] == region]
 
+    min_fee = min_fee if min_fee is not None else dff['ค่าเทอม'].min()
+    max_fee = max_fee if max_fee is not None else dff['ค่าเทอม'].max()
+
     dff = dff[(dff['ค่าเทอม'] >= min_fee) & (dff['ค่าเทอม'] <= max_fee)]
+
     dff = dff.sort_values(by='ค่าเทอม', ascending=(sort_order == 'asc'))
 
     return dff.to_dict('records')
@@ -534,7 +658,6 @@ def update_map(tab):
         size="จำนวนหลักสูตร",
         size_max=20,
         zoom=5,
-        # title="แผนที่มหาวิทยาลัยและหลักสูตรทั้งหมด",
         color_continuous_scale=px.colors.sequential.Plasma,
     )
 
@@ -557,6 +680,89 @@ def update_map(tab):
     return fig
 
 
+# Callback: อัพเดต selected-rank-table.data จาก selected_rows ของ search-table
+@app.callback(
+    Output('selected-rank-table', 'data'),
+    Output('search-table', 'selected_rows'),
+    Input('search-table', 'selected_rows'),
+    Input('selected-rank-table', 'data'),
+    State('search-table', 'data')
+)
+def sync_selected_tables(search_selected_rows, selected_rank_data, search_data):
+    ctx = callback_context
+
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == 'search-table':
+        # มาจากการเลือกแถวใน search-table
+        if search_selected_rows is None or search_data is None:
+            raise PreventUpdate
+        selected_data = [search_data[i] for i in search_selected_rows][:10]
+
+        # เติมอันดับให้ selected_data
+        for idx, item in enumerate(selected_data):
+            item['อันดับ'] = idx + 1
+
+        return selected_data, search_selected_rows[:10]
+
+    elif triggered_id == 'selected-rank-table':
+        # มาจากการแก้ไขข้อมูลใน selected-rank-table
+        if not selected_rank_data or search_data is None:
+            return [], []
+        
+        selected_indices = []
+        for item in selected_rank_data:
+            for idx, d in enumerate(search_data):
+                if (d['หลักสูตร'] == item['หลักสูตร']) and (d['มหาวิทยาลัย'] == item['มหาวิทยาลัย']):
+                    selected_indices.append(idx)
+                    break
+
+        # เติมอันดับให้ selected_rank_data ด้วย (ถ้าต้องการ)
+        for idx, item in enumerate(selected_rank_data):
+            item['อันดับ'] = idx + 1
+
+        return selected_rank_data[:10], selected_indices[:10]
+
+    # หา index ของหลักสูตรที่อยู่ใน selected-rank-table ใน search-table.data
+    selected_indices = []
+    for item in selected_rank_data:
+        for idx, d in enumerate(search_data):
+            # เช็คโดยเฉพาะ key หลักสูตร+มหาวิทยาลัยเพื่อแม่นยำ
+            if (d['หลักสูตร'] == item['หลักสูตร']) and (d['มหาวิทยาลัย'] == item['มหาวิทยาลัย']):
+                selected_indices.append(idx)
+                break
+    return selected_indices[:10]
+
+
+@app.callback(
+    Output("download-dataframe-xlsx", "data"),
+    Input("export-button", "n_clicks"),
+    State("selected-rank-table", "data"),
+    prevent_initial_call=True
+)
+def export_to_excel(n_clicks, table_data):
+    if not table_data:
+        return dash.no_update
+    
+    # แปลง list dict เป็น DataFrame
+    df_export = pd.DataFrame(table_data)
+    
+    # ตรวจสอบ columns ที่มี (เพื่อให้แน่ใจว่าครบ)
+    expected_cols = ['อันดับ', 'มหาวิทยาลัย', 'หลักสูตร', 'ประเภทหลักสูตร', 'ค่าเทอม']
+    # ถ้าคอลัมน์ไม่ครบ อาจจัดเรียงหรือตัดส่วนเกินออก
+    df_export = df_export.reindex(columns=expected_cols)
+    
+    # สร้างไฟล์ Excel ใน memory buffer
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_export.to_excel(writer, index=False, sheet_name='Top 10 Courses')
+        # ไม่ต้องเรียก save() เอง
+    
+    output.seek(0)
+    return dcc.send_bytes(output.read(), filename="10อันดับหลักสูตรที่สนใจ.xlsx")
 
 
 # =======================
