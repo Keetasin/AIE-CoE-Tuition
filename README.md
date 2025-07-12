@@ -36,6 +36,7 @@ Final data is exported to `data/university_fee_with_latlon.xlsx` for visualizati
 3. **Search**
    - Advanced search and filtering system
    - Sortable data table showing all programs and tuition details
+   - The Top 10 Courses of Interest table allows users to add courses of interest from the search results, rank them by level of interest, delete entries, and export the list as an Excel file.
 
 ---
 
