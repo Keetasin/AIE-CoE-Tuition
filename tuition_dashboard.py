@@ -577,42 +577,6 @@ def update_overview(type_selected, keyword_selected, region_selected):
 
     return hist_fig, box_fig, mean_fee, max_fee, min_fee, median_fee, count_programs
 
-@app.callback(
-    Output('search-table', 'data'),
-    Input('search-keyword', 'value'),
-    Input('search-university', 'value'),
-    Input('search-faculty', 'value'),
-    Input('search-department', 'value'),
-    Input('search-type', 'value'),
-    Input('search-region', 'value'),
-    Input('min-fee-input', 'value'),
-    Input('max-fee-input', 'value'),
-    Input('sort-order', 'value')
-)
-def update_search_table(keyword, university, faculty, department, type_course, region, min_fee, max_fee, sort_order):
-    dff = df.copy()
-
-    if keyword != 'all':
-        dff = dff[dff['คำค้น'].str.contains(keyword, case=False, na=False)]
-    if university != 'all':
-        dff = dff[dff['มหาวิทยาลัย'] == university]
-    if faculty != 'all':
-        dff = dff[dff['คณะ'] == faculty]
-    if department != 'all':
-        dff = dff[dff['สาขา'] == department]
-    if type_course != 'all':
-        dff = dff[dff['ประเภทหลักสูตร'] == type_course]
-    if region != 'all':
-        dff = dff[dff['ภาค'] == region]
-
-    min_fee = min_fee if min_fee is not None else dff['ค่าเทอม'].min()
-    max_fee = max_fee if max_fee is not None else dff['ค่าเทอม'].max()
-
-    dff = dff[(dff['ค่าเทอม'] >= min_fee) & (dff['ค่าเทอม'] <= max_fee)]
-
-    dff = dff.sort_values(by='ค่าเทอม', ascending=(sort_order == 'asc'))
-
-    return dff.to_dict('records')
 
 
 @app.callback(
@@ -680,62 +644,98 @@ def update_map(tab):
     return fig
 
 
-# Callback: อัพเดต selected-rank-table.data จาก selected_rows ของ search-table
 @app.callback(
-    Output('selected-rank-table', 'data'),
+    Output('search-table', 'data'),
     Output('search-table', 'selected_rows'),
+    Output('selected-rank-table', 'data'),
+    Input('search-keyword', 'value'),
+    Input('search-university', 'value'),
+    Input('search-faculty', 'value'),
+    Input('search-department', 'value'),
+    Input('search-type', 'value'),
+    Input('search-region', 'value'),
+    Input('min-fee-input', 'value'),
+    Input('max-fee-input', 'value'),
+    Input('sort-order', 'value'),
     Input('search-table', 'selected_rows'),
     Input('selected-rank-table', 'data'),
-    State('search-table', 'data')
+    State('search-table', 'data'),
 )
-def sync_selected_tables(search_selected_rows, selected_rank_data, search_data):
-    ctx = callback_context
+def update_all(keyword, university, faculty, department, type_course, region, min_fee, max_fee, sort_order,
+               search_selected_rows, selected_rank_data, search_data):
 
-    if not ctx.triggered:
-        raise PreventUpdate
-    
+    ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if triggered_id == 'search-table':
-        # มาจากการเลือกแถวใน search-table
-        if search_selected_rows is None or search_data is None:
-            raise PreventUpdate
-        selected_data = [search_data[i] for i in search_selected_rows][:10]
+    # 1. กรองข้อมูลสำหรับ search table ตาม filter dropdown
+    dff = df.copy()
+    if keyword != 'all':
+        dff = dff[dff['คำค้น'].str.contains(keyword, case=False, na=False)]
+    if university != 'all':
+        dff = dff[dff['มหาวิทยาลัย'] == university]
+    if faculty != 'all':
+        dff = dff[dff['คณะ'] == faculty]
+    if department != 'all':
+        dff = dff[dff['สาขา'] == department]
+    if type_course != 'all':
+        dff = dff[dff['ประเภทหลักสูตร'] == type_course]
+    if region != 'all':
+        dff = dff[dff['ภาค'] == region]
 
-        # เติมอันดับให้ selected_data
-        for idx, item in enumerate(selected_data):
-            item['อันดับ'] = idx + 1
+    min_fee = min_fee if min_fee is not None else dff['ค่าเทอม'].min()
+    max_fee = max_fee if max_fee is not None else dff['ค่าเทอม'].max()
+    dff = dff[(dff['ค่าเทอม'] >= min_fee) & (dff['ค่าเทอม'] <= max_fee)]
+    dff = dff.sort_values(by='ค่าเทอม', ascending=(sort_order == 'asc'))
 
-        return selected_data, search_selected_rows[:10]
+    search_table_data = dff.to_dict('records')
 
-    elif triggered_id == 'selected-rank-table':
-        # มาจากการแก้ไขข้อมูลใน selected-rank-table
-        if not selected_rank_data or search_data is None:
-            return [], []
+    # 2. กำหนดค่าพื้นฐาน selected_rank_table_data
+    selected_rank_table_data = selected_rank_data if selected_rank_data else []
+
+    # 3. ถ้า triggered เป็น search-table (เลือกแถวใหม่) ให้เพิ่ม item ใหม่ลงใน selected_rank_table_data (เก็บไว้)
+    if triggered_id == 'search-table' and search_selected_rows is not None and search_data is not None:
+        # หาข้อมูลที่ถูกเลือกใน search table
+        newly_selected_items = [search_data[i] for i in search_selected_rows if i < len(search_data)]
         
-        selected_indices = []
-        for item in selected_rank_data:
-            for idx, d in enumerate(search_data):
-                if (d['หลักสูตร'] == item['หลักสูตร']) and (d['มหาวิทยาลัย'] == item['มหาวิทยาลัย']):
-                    selected_indices.append(idx)
-                    break
+        # รวมข้อมูลเดิมกับข้อมูลใหม่ (โดยไม่ซ้ำหลักสูตร+มหาวิทยาลัย)
+        existing_keys = set((item['หลักสูตร'], item['มหาวิทยาลัย']) for item in selected_rank_table_data)
+        for item in newly_selected_items:
+            key = (item['หลักสูตร'], item['มหาวิทยาลัย'])
+            if key not in existing_keys:
+                selected_rank_table_data.append(item)
+                existing_keys.add(key)
+        
+        # จำกัดจำนวน 10 อันดับล่าสุดที่เก็บไว้ (ถ้าเกิน)
+        selected_rank_table_data = selected_rank_table_data[:10]
 
-        # เติมอันดับให้ selected_rank_data ด้วย (ถ้าต้องการ)
-        for idx, item in enumerate(selected_rank_data):
-            item['อันดับ'] = idx + 1
+    # 4. ถ้า triggered เป็น selected-rank-table (แก้ไขอันดับ หรือ ลบ) ให้ปรับอันดับใหม่
+    elif triggered_id == 'selected-rank-table':
+        if selected_rank_data:
+            selected_rank_table_data = selected_rank_data[:10]
+            # ปรับอันดับใหม่
+            for idx, item in enumerate(selected_rank_table_data):
+                item['อันดับ'] = idx + 1
+            # ไม่ติ๊ก checkbox ใน search-table ตอนแก้ไข selected-rank-table
+            search_selected_rows = []
+        else:
+            selected_rank_table_data = []
 
-        return selected_rank_data[:10], selected_indices[:10]
+    # 5. ปรับอันดับของข้อมูลใน selected_rank_table_data เสมอ
+    for idx, item in enumerate(selected_rank_table_data):
+        item['อันดับ'] = idx + 1
 
-    # หา index ของหลักสูตรที่อยู่ใน selected-rank-table ใน search-table.data
-    selected_indices = []
-    for item in selected_rank_data:
-        for idx, d in enumerate(search_data):
-            # เช็คโดยเฉพาะ key หลักสูตร+มหาวิทยาลัยเพื่อแม่นยำ
-            if (d['หลักสูตร'] == item['หลักสูตร']) and (d['มหาวิทยาลัย'] == item['มหาวิทยาลัย']):
-                selected_indices.append(idx)
-                break
-    return selected_indices[:10]
+    # 6. กำหนด selected_rows ให้ search-table ให้ตรงกับข้อมูลที่มีใน selected_rank_table_data
+    selected_rows = []
+    if selected_rank_table_data:
+        selected_keys = set((item['หลักสูตร'], item['มหาวิทยาลัย']) for item in selected_rank_table_data)
+        for i, row in enumerate(search_table_data):
+            key = (row['หลักสูตร'], row['มหาวิทยาลัย'])
+            if key in selected_keys:
+                selected_rows.append(i)
+    else:
+        selected_rows = []
 
+    return search_table_data, selected_rows, selected_rank_table_data
 
 @app.callback(
     Output("download-dataframe-xlsx", "data"),
@@ -763,6 +763,8 @@ def export_to_excel(n_clicks, table_data):
     
     output.seek(0)
     return dcc.send_bytes(output.read(), filename="10อันดับหลักสูตรที่สนใจ.xlsx")
+
+
 
 
 # =======================
