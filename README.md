@@ -25,18 +25,21 @@ Final data is exported to `data/university_fee_with_latlon.xlsx` for visualizati
 ### Dashboard Pages
 
 1. **Overview**
-   - Summary statistics of tuition fees
-   - Histogram and Box Plot visualizations
-   - Filters by program type, region, and keywords
+   - Displays an overall summary of tuition fees across various programs.
+   - Users can filter by program type, keyword, or region.
+   - Interactive visualizations include a histogram of tuition fee distribution and a boxplot grouped by program type.
+   - Summary cards show key statistics such as mean, max, min, median tuition fees, and total number of programs.
 
 2. **Map**
-   - Interactive map showing university locations with average tuition
-   - Hover to view details of each university and its programs
+   - An interactive map visualizing the locations of universities.
+   - Each point shows tuition-related details and available programs at that university.
+   - Colored and sized based on average tuition and number of programs.
 
 3. **Search**
-   - Advanced search and filtering system
-   - Sortable data table showing all programs and tuition details
-   - The Top 10 Courses of Interest table allows users to add courses of interest from the search results, rank them by level of interest, delete entries, and export the list as an Excel file.
+   - Search for programs using filters such as keyword, university, faculty, department, program type, region, and tuition fee range.
+   - Display the results in a table where users can select programs of interest and sort by tuition fees (ascending or descending).
+   - Users can select and rank their top 10 courses of interest.
+   - A button is provided to export the selected top 10 courses to an Excel file.
 
 ---
 
