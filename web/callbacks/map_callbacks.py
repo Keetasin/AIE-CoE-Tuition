@@ -1,0 +1,64 @@
+from dash import Input, Output
+import plotly.express as px
+import pandas as pd
+
+def register_map_callbacks(app, df):
+    @app.callback(
+        Output('map-graph', 'figure'),
+        Input('tabs', 'value')  # dummy input ให้ callback รันเมื่อเปิด tab map
+    )
+    def update_map(tab):
+        dff = df.copy()
+        dff = dff.dropna(subset=['Latitude', 'Longitude'])
+
+        def format_programs(group):
+            lines = []
+            for _, row in group.iterrows():
+                lines.append(f"- {row['หลักสูตร']}<br>&nbsp;&nbsp;ค่าเทอม: {row['ค่าเทอม']:,} บาท")
+            return "<br>".join(lines)
+
+        grouped = dff.groupby(['มหาวิทยาลัย', 'Latitude', 'Longitude', 'ภาค']).apply(lambda g: pd.Series({
+            'ข้อมูลหลักสูตร': format_programs(g),
+            'ค่าเทอมเฉลี่ย': g['ค่าเทอม'].mean(),
+            'ค่าเทอมต่ำสุด': g['ค่าเทอม'].min(),
+            'ค่าเทอมสูงสุด': g['ค่าเทอม'].max(),
+            'จำนวนหลักสูตร': len(g)
+        })).reset_index()
+
+        grouped['customdata'] = grouped.apply(lambda row: [
+            row['ภาค'],
+            row['ข้อมูลหลักสูตร'],
+            f"{row['ค่าเทอมเฉลี่ย']:,.0f} บาท",
+            f"{row['ค่าเทอมต่ำสุด']:,.0f} บาท",
+            f"{row['ค่าเทอมสูงสุด']:,.0f} บาท",
+            row['จำนวนหลักสูตร']
+        ], axis=1)
+
+        fig = px.scatter_mapbox(
+            grouped,
+            lat="Latitude",
+            lon="Longitude",
+            color="ค่าเทอมเฉลี่ย",
+            size="จำนวนหลักสูตร",
+            size_max=20,
+            zoom=5,
+            color_continuous_scale=px.colors.sequential.Plasma,
+        )
+
+        fig.update_traces(
+            customdata=grouped['customdata'],
+            hovertemplate=
+                "<b>%{hovertext}</b><br><br>" +
+                "จำนวนหลักสูตร: %{customdata[5]} หลักสูตร<br>" +
+                "หลักสูตร:<br>%{customdata[1]}<br><br>" +
+                "ค่าเทอมเฉลี่ย: %{customdata[2]}<br>" +
+                "ต่ำสุด: %{customdata[3]}<br>" +
+                "สูงสุด: %{customdata[4]}<br>" +
+                "<extra></extra>",
+            hovertext=grouped["มหาวิทยาลัย"]
+        )
+
+        fig.update_layout(mapbox_style="open-street-map")
+        fig.update_layout(margin={"r":0,"t":40,"l":0,"b":0})
+
+        return fig
