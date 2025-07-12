@@ -5,7 +5,7 @@ import pandas as pd
 def register_map_callbacks(app, df):
     @app.callback(
         Output('map-graph', 'figure'),
-        Input('tabs', 'value')  # dummy input ให้ callback รันเมื่อเปิด tab map
+        Input('tabs', 'value') 
     )
     def update_map(tab):
         dff = df.copy()

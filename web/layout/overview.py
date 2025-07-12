@@ -1,9 +1,9 @@
-from dash import html, dcc, dash_table
+from dash import html, dcc
 
 def get_overview_layout(df, theme):
     return html.Div([
     html.H2("ภาพรวมค่าเทอมของหลักสูตร", style={'textAlign': 'center'}),
-    html.Div([], style={'height': '10px'}),  # placeholder spacing only   
+    html.Div([], style={'height': '10px'}),   
     html.Div([
         html.Div([
             html.Label("เลือกประเภทหลักสูตร:"),
@@ -51,7 +51,7 @@ def get_overview_layout(df, theme):
 
     html.Div([
         html.Div([
-            html.H4("📦 จำนวนหลักสูตร", style={'color': theme['primary']}),
+            html.H4("📃 จำนวนหลักสูตร", style={'color': theme['primary']}),
             html.P(id='count-programs', style={'fontSize': '20px', 'fontWeight': 'bold'})
         ], style={
             'backgroundColor': theme['card'],
@@ -62,7 +62,7 @@ def get_overview_layout(df, theme):
             'textAlign': 'center'
         }),
         html.Div([
-            html.H4("🎯 ค่าเฉลี่ย", style={'color': theme['primary']}),
+            html.H4("➗ ค่าเฉลี่ย", style={'color': theme['primary']}),
             html.P(id='mean-fee', style={'fontSize': '20px', 'fontWeight': 'bold'})
         ], style={
             'backgroundColor': theme['card'],

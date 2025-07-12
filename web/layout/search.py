@@ -2,13 +2,11 @@ from dash import html, dcc, dash_table
 
 def get_search_layout(df, theme):
     return html.Div([
-    html.H2("ค้นหาหลักสูตรที่เหมาะสม", style={'textAlign': 'center'}),
-    html.Div([], style={'height': '10px'}),  # placeholder spacing only   
+    html.H2("ค้นหาหลักสูตร", style={'textAlign': 'center'}),
+    html.Div([], style={'height': '10px'}), 
 
-    # ครอบ 3 แถว dropdown ด้วย div นี้ กำหนดกึ่งกลางและจัดเรียงแนวตั้ง
     html.Div([
         html.Div([
-            # แถว 1
             html.Div([
                 html.Label("คำค้น (หลักสูตร):"),
                 dcc.Dropdown(
@@ -46,7 +44,6 @@ def get_search_layout(df, theme):
             ], style={'width': '30%'}),
         ], style={'display': 'flex', 'gap': '20px', 'justifyContent': 'center', 'marginBottom': '15px'}),
 
-        # แถว 2
         html.Div([
             html.Div([
                 html.Label("สาขา:"),
@@ -85,7 +82,6 @@ def get_search_layout(df, theme):
             ], style={'width': '30%'}),
         ], style={'display': 'flex', 'gap': '20px', 'justifyContent': 'center', 'marginBottom': '20px'}),
 
-        # แถว 3
         html.Div([
             html.Div([
                 html.Label("ค่าเทอมขั้นต่ำ:"),
@@ -112,7 +108,6 @@ def get_search_layout(df, theme):
     ], style={'maxWidth': '1280px', 'margin': '0 auto', 'display': 'flex', 'flexDirection': 'column', 'gap': '15px'}),
 
 
-    # ตารางแสดงผลหลักสูตรตามเงื่อนไข
     html.Div([
         dash_table.DataTable(
             id='search-table',
@@ -167,7 +162,6 @@ def get_search_layout(df, theme):
         'marginBottom': '30px'
     }),
 
-    # ตารางสำหรับแสดงหลักสูตรที่ผู้ใช้เลือกและลากจัดอันดับได้
     html.Div([
         html.H4("10 อันดับหลักสูตรที่สนใจ"),
         dash_table.DataTable(
@@ -217,7 +211,23 @@ def get_search_layout(df, theme):
             filter_action='none',
             ),
     html.Br(),
-    html.Button("Export 10 อันดับหลักสูตรเป็น Excel", id="export-button"),
+    html.Button(
+        "📥 Export to Excel",
+        id="export-button",
+        style={
+            'backgroundColor': '#cceeff',          # ฟ้าอ่อน
+            'color': '#003C71',                    # น้ำเงินเข้มอ่านง่าย
+            'border': '1px solid #99d6ff',
+            'padding': '6px 12px',                 # ปรับขนาดให้เล็กลง
+            'fontSize': '14px',                    # ขนาดตัวอักษรเล็กลง
+            'borderRadius': '6px',
+            'cursor': 'pointer',
+            'boxShadow': '1px 1px 3px rgba(0,0,0,0.1)',
+            'marginTop': '16px'
+        }
+    ),
+
+
     dcc.Download(id="download-dataframe-xlsx"),
     ], style={
         'backgroundColor': theme['card'],

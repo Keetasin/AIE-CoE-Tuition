@@ -1,6 +1,5 @@
 from dash import Input, Output
 import plotly.express as px
-import pandas as pd
 
 def register_overview_callbacks(app, df):
     @app.callback(
