@@ -6,15 +6,10 @@ from web.callbacks.overview_callbacks import register_overview_callbacks
 from web.callbacks.map_callbacks import register_map_callbacks
 from web.callbacks.search_callbacks import register_search_callbacks
 
-# =======================
-# ⚙️ App Initialization
-# =======================
+
 app = Dash(__name__, suppress_callback_exceptions=True)
 server = app.server
 
-# =======================
-# 🎨 Theme Configuration
-# =======================
 theme = {
     'background': '#f0f8ff',
     'card': '#ffffff',
@@ -23,7 +18,6 @@ theme = {
     'accent': '#00bcd4'
 }
 
-# สมมติคุณโหลด DataFrame ไว้ที่นี่ (แก้เป็น DataFrame จริงของคุณ)
 import pandas as pd
 df = pd.read_excel("web/data/university_fee_with_latlon.xlsx")
 
@@ -61,13 +55,10 @@ def switch_tab(tab):
     if tab == 'overview':
         return get_overview_layout(df, theme)
     elif tab == 'search':
-        # เรียกใช้ฟังก์ชัน get_search_layout พร้อมส่ง df กับ theme
         return get_search_layout(df, theme)
     elif tab == 'map':
-        # เรียกใช้ฟังก์ชัน get_map_layout พร้อมส่ง theme
         return get_map_layout(theme)
 
-# Register all callbacks from separate files
 register_overview_callbacks(app, df)
 register_map_callbacks(app, df)
 register_search_callbacks(app, df)  
