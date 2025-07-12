@@ -4,3 +4,4 @@ openpyxl
 dash
 dash_bootstrap_components
 geopy
+xlsxwriter

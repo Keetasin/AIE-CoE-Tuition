@@ -16,7 +16,7 @@ def run():
         for keyword in keywords:
             print(f"\n🔍 ค้นหา: {keyword}")
             search_input = page.locator("input[placeholder='พิมพ์ชื่อมหาวิทยาลัย คณะ หรือหลักสูตร']")
-            search_input.fill("")  # ล้างช่องก่อน
+            search_input.fill("")  
             page.wait_for_timeout(500)
             search_input.fill(keyword)
             search_input.press("Enter")
@@ -40,7 +40,6 @@ def run():
                     faculty = ""
                     university = ""
 
-                # เข้าไปดูค่าใช้จ่าย
                 fee_text = "ไม่พบข้อมูล"
                 type = ""
                 program_name = ""
@@ -73,7 +72,6 @@ def run():
 
                     detail_page.close()
 
-                # ➤ พิมพ์ข้อมูลบนหน้าจอ
                 print(f"\n{i+1}. 🎓 {program_name}")
                 print(f"     🏛️ มหาวิทยาลัย: {university}")
                 print(f"     📚 ประเภทหลักสูตร: {type}")
