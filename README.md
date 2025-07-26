@@ -80,7 +80,7 @@ Ensure that you have Python installed on your system before proceeding.
 Ensure you're inside the project directory and the virtual environment is activated.
 1. Run the application:
    ```bash
-   tuition_dashboard.py
+   python .\main.py
    ```
 2. Open your browser and go to:
    ```
