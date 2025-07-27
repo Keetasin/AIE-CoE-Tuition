@@ -4,12 +4,27 @@ import pandas as pd
 
 def register_map_callbacks(app, df):
     @app.callback(
-        Output('map-graph', 'figure'),
-        Input('tabs', 'value') 
+        Output('university-dropdown', 'options'),
+        Input('tabs', 'value')
     )
-    def update_map(tab):
+    def update_dropdown(tab):
+        if tab == 'map':
+            options = [{'label': uni, 'value': uni} for uni in sorted(df['มหาวิทยาลัย'].dropna().unique())]
+            return options
+        return []
+
+    @app.callback(
+        Output('map-graph', 'figure'),
+        Input('tabs', 'value'),
+        Input('university-dropdown', 'value')
+    )
+    def update_map(tab, selected_unis):
         dff = df.copy()
         dff = dff.dropna(subset=['Latitude', 'Longitude'])
+
+        # Filter by university dropdown
+        if selected_unis:
+            dff = dff[dff['มหาวิทยาลัย'].isin(selected_unis)]
 
         def format_programs(group):
             lines = []
