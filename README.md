@@ -31,6 +31,7 @@ Final data is exported to `data/university_fee_with_latlon.xlsx` for visualizati
    - Summary cards show key statistics such as mean, max, min, median tuition fees, and total number of programs.
 
 2. **Map**
+   - Users can select one or multiple universities from a dropdown menu to filter the map and view only the selected universities.
    - An interactive map visualizing the locations of universities.
    - Each point shows tuition-related details and available programs at that university.
    - Colored and sized based on average tuition and number of programs.
