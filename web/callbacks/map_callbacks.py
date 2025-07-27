@@ -49,6 +49,7 @@ def register_map_callbacks(app, df):
             row['จำนวนหลักสูตร']
         ], axis=1)
 
+        color_range = (df['ค่าเทอม'].min(), df['ค่าเทอม'].max())
         fig = px.scatter_mapbox(
             grouped,
             lat="Latitude",
@@ -58,6 +59,7 @@ def register_map_callbacks(app, df):
             size_max=20,
             zoom=5,
             color_continuous_scale=px.colors.sequential.Plasma,
+            range_color=color_range
         )
 
         fig.update_traces(
