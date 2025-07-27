@@ -34,7 +34,7 @@ Final data is exported to `data/university_fee_with_latlon.xlsx` for visualizati
    - Users can select one or multiple universities from a dropdown menu to filter the map and view only the selected universities.
    - An interactive map visualizing the locations of universities.
    - Each point shows tuition-related details and available programs at that university.
-   - Each point is colored and sized based on the average tuition fees of the corresponding university.
+   - Each point is colored based on the average tuition fees of the corresponding university, and its size represents the number of programs offered by that university.
 
 3. **Search**
    - Search for programs using filters such as keyword, university, faculty, department, program type, region, and tuition fee range.

@@ -49,7 +49,8 @@ def register_map_callbacks(app, df):
             row['จำนวนหลักสูตร']
         ], axis=1)
 
-        color_range = (df['ค่าเทอม'].min(), df['ค่าเทอม'].max())
+        color_range = (df.groupby('มหาวิทยาลัย')['ค่าเทอม'].mean().min(), df.groupby('มหาวิทยาลัย')['ค่าเทอม'].mean().max())
+
         fig = px.scatter_mapbox(
             grouped,
             lat="Latitude",
